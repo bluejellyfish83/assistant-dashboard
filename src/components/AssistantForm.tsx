@@ -45,7 +45,7 @@ interface Assistant {
 
 interface AssistantFormProps {
   assistant: Assistant | null;
-  onSave: () => void;
+  onSave: (assistant: Assistant) => void;
   onCancel: () => void;
 }
 
@@ -76,17 +76,29 @@ const AssistantForm: React.FC<AssistantFormProps> = ({ assistant, onSave, onCanc
       return;
     }
 
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Success",
-        description: assistant
-          ? "Assistant updated successfully"
-          : "Assistant created successfully",
-      });
-      setIsSubmitting(false);
-      onSave();
-    }, 1000);
+    // Create a new assistant object
+    const updatedAssistant: Assistant = {
+      assistant_id: assistant?.assistant_id || `assistant-${Date.now()}`,
+      name,
+      description,
+      system_prompt: systemPrompt,
+      default_model: model,
+      default_temperature: temperature,
+      default_max_tokens: maxTokens,
+      status: "active",
+      created_at: assistant?.created_at || Date.now() / 1000,
+      last_used_at: assistant?.last_used_at || Date.now() / 1000,
+    };
+
+    toast({
+      title: "Success",
+      description: assistant
+        ? "Assistant updated successfully"
+        : "Assistant created successfully",
+    });
+    
+    setIsSubmitting(false);
+    onSave(updatedAssistant);
   };
 
   return (

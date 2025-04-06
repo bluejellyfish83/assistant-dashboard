@@ -24,54 +24,33 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Edit, Trash2, Link } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Sample data for assistants
-const sampleAssistants = [
-  {
-    assistant_id: "1",
-    name: "Customer Support",
-    description: "Handles common customer service inquiries",
-    default_model: "anthropic/claude-3-haiku",
-    status: "active",
-    created_at: Date.now() / 1000 - 60 * 60 * 24 * 3,
-    last_used_at: Date.now() / 1000 - 60 * 60 * 2,
-  },
-  {
-    assistant_id: "2",
-    name: "Sales Assistant",
-    description: "Helps with product inquiries and sales questions",
-    default_model: "openai/gpt-4-turbo",
-    status: "active",
-    created_at: Date.now() / 1000 - 60 * 60 * 24 * 5,
-    last_used_at: Date.now() / 1000 - 60 * 60 * 24,
-  },
-  {
-    assistant_id: "3",
-    name: "Technical Support",
-    description: "Assists with technical issues and troubleshooting",
-    default_model: "anthropic/claude-3-sonnet",
-    status: "inactive",
-    created_at: Date.now() / 1000 - 60 * 60 * 24 * 10,
-    last_used_at: Date.now() / 1000 - 60 * 60 * 24 * 7,
-  },
-];
-
+// Define the Assistant interface
 interface Assistant {
   assistant_id: string;
   name: string;
   description: string;
+  system_prompt: string;
   default_model: string;
+  default_temperature: number;
+  default_max_tokens: number;
   status: string;
   created_at: number;
   last_used_at: number;
 }
 
 interface AssistantListProps {
+  assistants: Assistant[];
   onEdit: (assistant: Assistant | null) => void;
   onWebhook: (assistant: Assistant) => void;
+  onDelete: (assistantId: string) => void;
 }
 
-const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
-  const [assistants, setAssistants] = useState<Assistant[]>(sampleAssistants);
+const AssistantList: React.FC<AssistantListProps> = ({ 
+  assistants, 
+  onEdit, 
+  onWebhook, 
+  onDelete 
+}) => {
   const [searchText, setSearchText] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [assistantToDelete, setAssistantToDelete] = useState<Assistant | null>(null);
@@ -84,11 +63,7 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
 
   const confirmDelete = () => {
     if (assistantToDelete) {
-      // In a real app, you'd make an API call here
-      const updatedAssistants = assistants.filter(
-        (a) => a.assistant_id !== assistantToDelete.assistant_id
-      );
-      setAssistants(updatedAssistants);
+      onDelete(assistantToDelete.assistant_id);
       toast({
         title: "Assistant deleted",
         description: `${assistantToDelete.name} has been removed.`,
@@ -137,7 +112,7 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
             {filteredAssistants.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
-                  No assistants found.
+                  {assistants.length === 0 ? "No assistants yet. Create one to get started." : "No assistants found."}
                 </TableCell>
               </TableRow>
             ) : (
