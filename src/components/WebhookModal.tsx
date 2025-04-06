@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -143,14 +142,9 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
               <div className="rounded-md bg-muted p-4 mt-2">
                 <pre className="text-xs overflow-auto">
 {`{
-  "messages": [
-    {
-      "role": "user",
-      "content": "{{User Input}}"
-    }
-  ],
-  "customer_id": "{{contact.id}}",
-  "conversation_id": "{{conversation.id}}"
+  "message": "{{last_input_text}}",
+  "threadId": "{{cuf_12794143}}",
+  "type": "user_message"
 }`}
                 </pre>
               </div>
