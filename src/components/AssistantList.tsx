@@ -24,12 +24,11 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Edit, Trash2, Link } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Update sample assistants to include company name
+// Sample data for assistants
 const sampleAssistants = [
   {
     assistant_id: "1",
     name: "Customer Support",
-    company: "TechCorp Solutions",
     description: "Handles common customer service inquiries",
     default_model: "anthropic/claude-3-haiku",
     status: "active",
@@ -39,7 +38,6 @@ const sampleAssistants = [
   {
     assistant_id: "2",
     name: "Sales Assistant",
-    company: "Global Innovations",
     description: "Helps with product inquiries and sales questions",
     default_model: "openai/gpt-4-turbo",
     status: "active",
@@ -49,7 +47,6 @@ const sampleAssistants = [
   {
     assistant_id: "3",
     name: "Technical Support",
-    company: "Enterprise Systems",
     description: "Assists with technical issues and troubleshooting",
     default_model: "anthropic/claude-3-sonnet",
     status: "inactive",
@@ -58,11 +55,9 @@ const sampleAssistants = [
   },
 ];
 
-// Update the Assistant interface to include company
 interface Assistant {
   assistant_id: string;
   name: string;
-  company: string;
   description: string;
   default_model: string;
   status: string;
@@ -105,8 +100,7 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
 
   const filteredAssistants = assistants.filter((assistant) =>
     assistant.name.toLowerCase().includes(searchText.toLowerCase()) ||
-    assistant.description.toLowerCase().includes(searchText.toLowerCase()) ||
-    assistant.company.toLowerCase().includes(searchText.toLowerCase())
+    assistant.description.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
@@ -130,8 +124,7 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Agent Name</TableHead>
-              <TableHead>Company</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
               <TableHead>Model</TableHead>
               <TableHead>Status</TableHead>
@@ -143,7 +136,7 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
           <TableBody>
             {filteredAssistants.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                   No assistants found.
                 </TableCell>
               </TableRow>
@@ -151,7 +144,6 @@ const AssistantList: React.FC<AssistantListProps> = ({ onEdit, onWebhook }) => {
               filteredAssistants.map((assistant) => (
                 <TableRow key={assistant.assistant_id}>
                   <TableCell className="font-medium">{assistant.name}</TableCell>
-                  <TableCell>{assistant.company}</TableCell>
                   <TableCell>{assistant.description}</TableCell>
                   <TableCell>{assistant.default_model.split('/')[1]}</TableCell>
                   <TableCell>

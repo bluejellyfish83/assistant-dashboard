@@ -10,10 +10,7 @@ interface Assistant {
   assistant_id: string;
   name: string;
   description: string;
-  system_prompt: string;
   default_model: string;
-  default_temperature: number;
-  default_max_tokens: number;
   status: string;
   created_at: number;
   last_used_at: number;
