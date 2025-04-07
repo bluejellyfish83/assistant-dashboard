@@ -24,19 +24,26 @@ const Index = () => {
   // Fetch assistants with improved error handling and retry logic
   const { data: assistants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['assistants'],
-    queryFn: assistantService.getAssistants,
+    queryFn: () => {
+      console.log('Initiating API request to fetch assistants');
+      return assistantService.getAssistants();
+    },
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Handle API errors
+  // Handle API errors with more detailed error reporting
   useEffect(() => {
     if (error) {
-      console.error('API Error:', error);
+      console.error('API Error Details:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown connection error';
+        
       toast({
         title: "Connection Error",
-        description: `Could not connect to API: ${(error as Error).message}`,
+        description: `Could not connect to API: ${errorMessage}`,
         variant: "destructive",
       });
     }
@@ -162,7 +169,10 @@ const Index = () => {
             <AlertDescription>
               <p>Could not connect to the API. Please check your connection and API configuration.</p>
               <button 
-                onClick={() => refetch()} 
+                onClick={() => {
+                  console.log('Retry attempt initiated by user');
+                  refetch();
+                }} 
                 className="mt-2 text-sm font-medium underline"
               >
                 Try again

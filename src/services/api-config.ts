@@ -9,5 +9,23 @@ export const API_CONFIG = {
 
 export const getHeaders = () => ({
   'Content-Type': 'application/json',
-  'x-api-key': API_CONFIG.apiKey
+  'x-api-key': API_CONFIG.apiKey,
+  'Accept': 'application/json'
 });
+
+// Helper function to implement fetch with timeout
+export const fetchWithTimeout = async (url: string, options: RequestInit, timeout: number = API_CONFIG.timeout) => {
+  const controller = new AbortController();
+  const { signal } = controller;
+  
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { ...options, signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+};
