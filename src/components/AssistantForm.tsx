@@ -1,5 +1,7 @@
 
 import React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { 
   Card, 
   CardContent, 
@@ -10,25 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { ModelSelector } from './assistant/ModelSelector';
+import { TemperatureControl } from './assistant/TemperatureControl';
 import { useToast } from "@/hooks/use-toast";
-
-const models = [
-  { value: "anthropic/claude-3-haiku", label: "Claude 3 Haiku" },
-  { value: "anthropic/claude-3-sonnet", label: "Claude 3 Sonnet" },
-  { value: "anthropic/claude-3-opus", label: "Claude 3 Opus" },
-  { value: "openai/gpt-4o", label: "GPT-4o" },
-  { value: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
-];
+import { assistantSchema, AssistantFormValues } from '@/schemas/assistant-schema';
 
 interface Assistant {
   assistant_id: string;
@@ -50,44 +39,37 @@ interface AssistantFormProps {
 }
 
 const AssistantForm: React.FC<AssistantFormProps> = ({ assistant, onSave, onCancel }) => {
-  const [name, setName] = React.useState(assistant?.name || "");
-  const [description, setDescription] = React.useState(assistant?.description || "");
-  const [systemPrompt, setSystemPrompt] = React.useState(
-    assistant?.system_prompt || "You are a helpful AI assistant."
-  );
-  const [model, setModel] = React.useState(assistant?.default_model || "anthropic/claude-3-haiku");
-  const [temperature, setTemperature] = React.useState(assistant?.default_temperature || 0.7);
-  const [maxTokens, setMaxTokens] = React.useState(assistant?.default_max_tokens || 1000);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const { toast } = useToast();
+  
+  // Initialize form with default values or existing assistant values
+  const form = useForm<AssistantFormValues>({
+    resolver: zodResolver(assistantSchema),
+    defaultValues: {
+      name: assistant?.name || "",
+      description: assistant?.description || "",
+      system_prompt: assistant?.system_prompt || "You are a helpful AI assistant.",
+      default_model: assistant?.default_model || "anthropic/claude-3-haiku",
+      default_temperature: assistant?.default_temperature || 0.7,
+      default_max_tokens: assistant?.default_max_tokens || 1000,
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (data: AssistantFormValues) => {
     setIsSubmitting(true);
 
-    // Validate form
-    if (!name.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Assistant name is required",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Create a new assistant object
+    // Create updated assistant object
     const updatedAssistant: Assistant = {
       assistant_id: assistant?.assistant_id || `assistant-${Date.now()}`,
-      name,
-      description,
-      system_prompt: systemPrompt,
-      default_model: model,
-      default_temperature: temperature,
-      default_max_tokens: maxTokens,
+      name: data.name,
+      description: data.description || "",
+      system_prompt: data.system_prompt,
+      default_model: data.default_model,
+      default_temperature: data.default_temperature,
+      default_max_tokens: data.default_max_tokens,
       status: "active",
-      created_at: assistant?.created_at || Date.now() / 1000,
-      last_used_at: assistant?.last_used_at || Date.now() / 1000,
+      created_at: assistant?.created_at || Math.floor(Date.now() / 1000),
+      last_used_at: assistant?.last_used_at || Math.floor(Date.now() / 1000),
     };
 
     toast({
@@ -102,106 +84,109 @@ const AssistantForm: React.FC<AssistantFormProps> = ({ assistant, onSave, onCanc
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>{assistant ? "Edit Assistant" : "Create New Assistant"}</CardTitle>
-          <CardDescription>
-            {assistant
-              ? "Update the details for this assistant"
-              : "Configure a new AI assistant for your needs"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              placeholder="Assistant name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle>{assistant ? "Edit Assistant" : "Create New Assistant"}</CardTitle>
+            <CardDescription>
+              {assistant
+                ? "Update the details for this assistant"
+                : "Configure a new AI assistant for your needs"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className="grid w-full gap-1.5">
+                  <FormLabel htmlFor="name">Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="name"
+                      placeholder="Assistant name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              placeholder="Brief description of this assistant's purpose"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem className="grid w-full gap-1.5">
+                  <FormLabel htmlFor="description">Description</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="description"
+                      placeholder="Brief description of this assistant's purpose"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="system-prompt">System Prompt</Label>
-            <Textarea
-              id="system-prompt"
-              placeholder="Instructions for the assistant's behavior and knowledge"
-              value={systemPrompt}
-              onChange={(e) => setSystemPrompt(e.target.value)}
-              className="min-h-[120px]"
+            <FormField
+              control={form.control}
+              name="system_prompt"
+              render={({ field }) => (
+                <FormItem className="grid w-full gap-1.5">
+                  <FormLabel htmlFor="system-prompt">System Prompt</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      id="system-prompt"
+                      placeholder="Instructions for the assistant's behavior and knowledge"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="model">Model</Label>
-            <Select value={model} onValueChange={setModel}>
-              <SelectTrigger id="model">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
-                    {model.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+            <ModelSelector control={form.control} />
+            <TemperatureControl control={form.control} />
 
-          <div className="grid w-full gap-1.5">
-            <div className="flex justify-between">
-              <Label htmlFor="temperature">Temperature: {temperature.toFixed(1)}</Label>
-            </div>
-            <Slider
-              id="temperature"
-              min={0}
-              max={1}
-              step={0.1}
-              value={[temperature]}
-              onValueChange={(values) => setTemperature(values[0])}
-              className="py-2"
+            <FormField
+              control={form.control}
+              name="default_max_tokens"
+              render={({ field }) => (
+                <FormItem className="grid w-full gap-1.5">
+                  <FormLabel htmlFor="max-tokens">Max Tokens</FormLabel>
+                  <FormControl>
+                    <Input
+                      id="max-tokens"
+                      type="number"
+                      min={1}
+                      max={4000}
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1000)}
+                      value={field.value}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Precise</span>
-              <span>Creative</span>
-            </div>
-          </div>
-
-          <div className="grid w-full gap-1.5">
-            <Label htmlFor="max-tokens">Max Tokens</Label>
-            <Input
-              id="max-tokens"
-              type="number"
-              min={1}
-              max={4000}
-              value={maxTokens}
-              onChange={(e) => setMaxTokens(parseInt(e.target.value) || 1000)}
-            />
-          </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : assistant ? "Update Assistant" : "Create Assistant"}
-          </Button>
-        </CardFooter>
-      </Card>
-    </form>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : assistant ? "Update Assistant" : "Create Assistant"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </Form>
   );
 };
 
