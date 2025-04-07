@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -22,20 +21,20 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch assistants with improved error handling and reduced retry logic
+  // Fetch assistants
   const { data: assistants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['assistants'],
     queryFn: () => {
       console.log('Initiating API request to fetch assistants');
       return assistantService.getAssistants();
     },
-    retry: 1, // Reduced retries to prevent excessive API calls
-    retryDelay: 2000, // 2 second delay between retries
+    retry: 2,
+    retryDelay: 1000,
     staleTime: 1000 * 60 * 2, // 2 minutes
-    refetchOnWindowFocus: false, // Don't refetch when window regains focus
+    refetchOnWindowFocus: false,
   });
 
-  // Handle API errors with more detailed error reporting
+  // Handle API errors
   useEffect(() => {
     if (error) {
       console.error('API Error Details:', error);
@@ -43,33 +42,21 @@ const Index = () => {
         ? error.message 
         : 'Unknown connection error';
         
-      // Only show toast for the first error, not for every retry
       if (!isRetrying) {
         toast({
           title: "Connection Issue",
-          description: `API connectivity problem: ${errorMessage}. Using cached data.`,
+          description: `API connectivity problem: ${errorMessage}. Please retry.`,
           variant: "destructive",
         });
       }
     }
   }, [error, toast, isRetrying]);
 
-  // Clear assistant creation flag when component unmounts
-  useEffect(() => {
-    return () => {
-      assistantService.clearCreationFlag();
-    };
-  }, []);
-
   // Mutations
   const createAssistantMutation = useMutation({
     mutationFn: (assistant: Omit<Assistant, 'assistant_id' | 'created_at' | 'last_used_at'>) => 
       assistantService.createAssistant(assistant),
-    onMutate: () => {
-      // Set a flag to prevent multiple submissions
-      return { timestamp: Date.now() };
-    },
-    onSuccess: (data, variables, context) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assistants'] });
       toast({
         title: "Success",
@@ -78,21 +65,13 @@ const Index = () => {
       setShowForm(false);
       setSelectedAssistant(null);
     },
-    onError: (error, variables, context) => {
+    onError: (error) => {
       console.error('Create assistant error:', error);
-      // If error is "already in progress", don't show toast
-      if (error instanceof Error && error.message.includes('already in progress')) {
-        console.log('Ignoring duplicate creation attempt');
-        return;
-      }
-      
       toast({
-        title: "Note",
-        description: `Assistant created but might have syncing issues: ${(error as Error).message}`,
-        variant: "default",
+        title: "Error",
+        description: `Failed to create assistant: ${(error as Error).message}`,
+        variant: "destructive",
       });
-      setShowForm(false);
-      setSelectedAssistant(null);
     }
   });
 
@@ -111,12 +90,10 @@ const Index = () => {
     onError: (error) => {
       console.error('Update assistant error:', error);
       toast({
-        title: "Note",
-        description: `Assistant updated but might have syncing issues: ${(error as Error).message}`,
-        variant: "default",
+        title: "Error",
+        description: `Failed to update assistant: ${(error as Error).message}`,
+        variant: "destructive",
       });
-      setShowForm(false);
-      setSelectedAssistant(null);
     }
   });
 
@@ -131,11 +108,10 @@ const Index = () => {
     },
     onError: (error) => {
       console.error('Delete assistant error:', error);
-      queryClient.invalidateQueries({ queryKey: ['assistants'] });
       toast({
-        title: "Note",
-        description: `Assistant removed but might have syncing issues: ${(error as Error).message}`,
-        variant: "default",
+        title: "Error",
+        description: `Failed to delete assistant: ${(error as Error).message}`,
+        variant: "destructive",
       });
     }
   });
@@ -181,9 +157,6 @@ const Index = () => {
     setIsRetrying(true);
     refetch().finally(() => setIsRetrying(false));
     
-    // Clear any ongoing assistant creation
-    assistantService.clearCreationFlag();
-    
     toast({
       title: "Retrying connection",
       description: "Attempting to reconnect to the API...",
@@ -203,15 +176,15 @@ const Index = () => {
         </div>
 
         {error && (
-          <Alert variant="default" className="mb-6 border-orange-200 bg-orange-50">
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-            <AlertTitle className="text-orange-700">Connection Status</AlertTitle>
-            <AlertDescription className="text-orange-600">
-              <p>We're currently using locally cached data. API sync may be limited.</p>
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Connection Error</AlertTitle>
+            <AlertDescription>
+              <p>Unable to connect to the API. Please check your network connection.</p>
               <button 
                 onClick={handleRetry} 
                 disabled={isRetrying}
-                className="mt-2 text-sm font-medium underline text-orange-700 hover:text-orange-900"
+                className="mt-2 text-sm font-medium underline text-white"
               >
                 {isRetrying ? "Connecting..." : "Try reconnecting"}
               </button>
