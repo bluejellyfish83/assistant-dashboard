@@ -18,6 +18,7 @@ export interface ApiAssistant {
 export const assistantService = {
   // Get all assistants
   async getAssistants(): Promise<ApiAssistant[]> {
+    console.log('Fetching assistants from:', `${API_CONFIG.baseUrl}/assistants`);
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/assistants`, {
         method: 'GET',
@@ -26,10 +27,13 @@ export const assistantService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch assistants');
+        console.error('Error response:', response.status, errorData);
+        throw new Error(errorData.message || `Failed to fetch assistants: ${response.status}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Assistants fetched successfully:', data);
+      return data;
     } catch (error) {
       console.error('Error fetching assistants:', error);
       throw error;
@@ -38,6 +42,7 @@ export const assistantService = {
   
   // Get a specific assistant
   async getAssistant(assistantId: string): Promise<ApiAssistant> {
+    console.log('Fetching assistant:', assistantId);
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/assistants/${assistantId}`, {
         method: 'GET',
@@ -46,10 +51,13 @@ export const assistantService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch assistant');
+        console.error('Error response:', response.status, errorData);
+        throw new Error(errorData.message || `Failed to fetch assistant: ${response.status}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Assistant fetched successfully:', data);
+      return data;
     } catch (error) {
       console.error(`Error fetching assistant ${assistantId}:`, error);
       throw error;
@@ -58,6 +66,7 @@ export const assistantService = {
   
   // Create new assistant
   async createAssistant(assistantData: Omit<ApiAssistant, 'assistant_id' | 'created_at' | 'last_used_at'>): Promise<ApiAssistant> {
+    console.log('Creating assistant with data:', assistantData);
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/assistants`, {
         method: 'POST',
@@ -67,10 +76,13 @@ export const assistantService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create assistant');
+        console.error('Error response:', response.status, errorData);
+        throw new Error(errorData.message || `Failed to create assistant: ${response.status}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Assistant created successfully:', data);
+      return data;
     } catch (error) {
       console.error('Error creating assistant:', error);
       throw error;
@@ -79,6 +91,7 @@ export const assistantService = {
   
   // Update an assistant
   async updateAssistant(assistantId: string, assistantData: Partial<ApiAssistant>): Promise<ApiAssistant> {
+    console.log('Updating assistant:', assistantId, 'with data:', assistantData);
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/assistants/${assistantId}`, {
         method: 'PUT',
@@ -88,10 +101,13 @@ export const assistantService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update assistant');
+        console.error('Error response:', response.status, errorData);
+        throw new Error(errorData.message || `Failed to update assistant: ${response.status}`);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log('Assistant updated successfully:', data);
+      return data;
     } catch (error) {
       console.error(`Error updating assistant ${assistantId}:`, error);
       throw error;
@@ -100,6 +116,7 @@ export const assistantService = {
   
   // Delete an assistant
   async deleteAssistant(assistantId: string): Promise<void> {
+    console.log('Deleting assistant:', assistantId);
     try {
       const response = await fetch(`${API_CONFIG.baseUrl}/assistants/${assistantId}`, {
         method: 'DELETE',
@@ -108,8 +125,11 @@ export const assistantService = {
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to delete assistant');
+        console.error('Error response:', response.status, errorData);
+        throw new Error(errorData.message || `Failed to delete assistant: ${response.status}`);
       }
+      
+      console.log('Assistant deleted successfully');
     } catch (error) {
       console.error(`Error deleting assistant ${assistantId}:`, error);
       throw error;

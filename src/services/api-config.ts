@@ -1,8 +1,8 @@
 
 // API configuration
 export const API_CONFIG = {
-  baseUrl: process.env.REACT_APP_API_URL, // REPLACE THIS WITH YOUR ACTUAL API GATEWAY URL
-  apiKey: process.env.REACT_APP_API_KEY // REPLACE THIS WITH YOUR ACTUAL API KEY
+  baseUrl: 'https://0675fyl2a3.execute-api.ap-east-1.amazonaws.com/dev',
+  apiKey: 'F8AD4hf2NV97e4qpypVer7vf6btsTbpM8UwzFuMe'
 };
 
 export const getHeaders = () => ({

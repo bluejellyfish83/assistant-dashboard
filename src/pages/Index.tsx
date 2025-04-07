@@ -7,6 +7,8 @@ import AssistantForm from '@/components/AssistantForm';
 import WebhookModal from '@/components/WebhookModal';
 import { assistantService, ApiAssistant } from '@/services/assistant-service';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
 
 // Define the Assistant interface with all required properties
 type Assistant = ApiAssistant;
@@ -20,17 +22,20 @@ const Index = () => {
   const queryClient = useQueryClient();
 
   // Fetch assistants
-  const { data: assistants = [], isLoading, error } = useQuery({
+  const { data: assistants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['assistants'],
     queryFn: assistantService.getAssistants,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Handle API errors
   useEffect(() => {
     if (error) {
+      console.error('API Error:', error);
       toast({
-        title: "Error",
-        description: `Failed to load assistants: ${(error as Error).message}`,
+        title: "Connection Error",
+        description: `Could not connect to API: ${(error as Error).message}`,
         variant: "destructive",
       });
     }
@@ -50,6 +55,7 @@ const Index = () => {
       setSelectedAssistant(null);
     },
     onError: (error) => {
+      console.error('Create assistant error:', error);
       toast({
         title: "Error",
         description: `Failed to create assistant: ${(error as Error).message}`,
@@ -71,6 +77,7 @@ const Index = () => {
       setSelectedAssistant(null);
     },
     onError: (error) => {
+      console.error('Update assistant error:', error);
       toast({
         title: "Error",
         description: `Failed to update assistant: ${(error as Error).message}`,
@@ -89,6 +96,7 @@ const Index = () => {
       });
     },
     onError: (error) => {
+      console.error('Delete assistant error:', error);
       toast({
         title: "Error",
         description: `Failed to delete assistant: ${(error as Error).message}`,
@@ -145,6 +153,22 @@ const Index = () => {
             Create, manage, and connect your AI assistants to ManyChat.
           </p>
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <ExclamationTriangleIcon className="h-4 w-4" />
+            <AlertTitle>API Connection Error</AlertTitle>
+            <AlertDescription>
+              <p>Could not connect to the API. Please check your connection and API configuration.</p>
+              <button 
+                onClick={() => refetch()} 
+                className="mt-2 text-sm font-medium underline"
+              >
+                Try again
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {showForm ? (
           <AssistantForm
