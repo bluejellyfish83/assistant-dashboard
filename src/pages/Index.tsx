@@ -1,30 +1,101 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import AssistantList from '@/components/AssistantList';
 import AssistantForm from '@/components/AssistantForm';
 import WebhookModal from '@/components/WebhookModal';
+import { assistantService, ApiAssistant } from '@/services/assistant-service';
+import { useToast } from '@/hooks/use-toast';
 
 // Define the Assistant interface with all required properties
-interface Assistant {
-  assistant_id: string;
-  name: string;
-  description: string;
-  system_prompt: string;
-  default_model: string;
-  default_temperature: number;
-  default_max_tokens: number;
-  status: string;
-  created_at: number;
-  last_used_at: number;
-}
+type Assistant = ApiAssistant;
 
 const Index = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [webhookAssistant, setWebhookAssistant] = useState<Assistant | null>(null);
   const [showWebhookModal, setShowWebhookModal] = useState(false);
-  const [assistants, setAssistants] = useState<Assistant[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch assistants
+  const { data: assistants = [], isLoading, error } = useQuery({
+    queryKey: ['assistants'],
+    queryFn: assistantService.getAssistants,
+  });
+
+  // Handle API errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: `Failed to load assistants: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
+  // Mutations
+  const createAssistantMutation = useMutation({
+    mutationFn: (assistant: Omit<Assistant, 'assistant_id' | 'created_at' | 'last_used_at'>) => 
+      assistantService.createAssistant(assistant),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      toast({
+        title: "Success",
+        description: "Assistant created successfully",
+      });
+      setShowForm(false);
+      setSelectedAssistant(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to create assistant: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const updateAssistantMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string, data: Partial<Assistant> }) => 
+      assistantService.updateAssistant(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      toast({
+        title: "Success",
+        description: "Assistant updated successfully",
+      });
+      setShowForm(false);
+      setSelectedAssistant(null);
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update assistant: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteAssistantMutation = useMutation({
+    mutationFn: (assistantId: string) => assistantService.deleteAssistant(assistantId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      toast({
+        title: "Success",
+        description: "Assistant deleted successfully",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete assistant: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleEditAssistant = (assistant: Assistant | null) => {
     setSelectedAssistant(assistant);
@@ -32,19 +103,17 @@ const Index = () => {
   };
 
   const handleSaveAssistant = (assistant: Assistant) => {
-    setAssistants(prevAssistants => {
-      // Check if this is an update to an existing assistant
-      if (assistant.assistant_id && prevAssistants.some(a => a.assistant_id === assistant.assistant_id)) {
-        return prevAssistants.map(a => 
-          a.assistant_id === assistant.assistant_id ? assistant : a
-        );
-      } else {
-        // This is a new assistant
-        return [...prevAssistants, assistant];
-      }
-    });
-    setShowForm(false);
-    setSelectedAssistant(null);
+    if (assistant.assistant_id && assistants.some(a => a.assistant_id === assistant.assistant_id)) {
+      // Update existing assistant
+      updateAssistantMutation.mutate({
+        id: assistant.assistant_id,
+        data: assistant
+      });
+    } else {
+      // Create new assistant
+      const { assistant_id, created_at, last_used_at, ...assistantData } = assistant;
+      createAssistantMutation.mutate(assistantData as Omit<Assistant, 'assistant_id' | 'created_at' | 'last_used_at'>);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -62,9 +131,7 @@ const Index = () => {
   };
 
   const handleDeleteAssistant = (assistantId: string) => {
-    setAssistants(prevAssistants => 
-      prevAssistants.filter(assistant => assistant.assistant_id !== assistantId)
-    );
+    deleteAssistantMutation.mutate(assistantId);
   };
 
   return (
@@ -88,6 +155,7 @@ const Index = () => {
         ) : (
           <AssistantList
             assistants={assistants}
+            isLoading={isLoading}
             onEdit={handleEditAssistant}
             onWebhook={handleShowWebhook}
             onDelete={handleDeleteAssistant}
