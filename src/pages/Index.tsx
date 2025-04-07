@@ -8,7 +8,7 @@ import WebhookModal from '@/components/WebhookModal';
 import { assistantService, ApiAssistant } from '@/services/assistant-service';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { AlertTriangle } from 'lucide-react';
 
 // Define the Assistant interface with all required properties
 type Assistant = ApiAssistant;
@@ -156,7 +156,7 @@ const Index = () => {
 
         {error && (
           <Alert variant="destructive" className="mb-6">
-            <ExclamationTriangleIcon className="h-4 w-4" />
+            <AlertTriangle className="h-4 w-4" />
             <AlertTitle>API Connection Error</AlertTitle>
             <AlertDescription>
               <p>Could not connect to the API. Please check your connection and API configuration.</p>
