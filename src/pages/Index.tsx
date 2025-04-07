@@ -21,12 +21,13 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch assistants
+  // Fetch assistants with improved error handling and retry logic
   const { data: assistants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['assistants'],
     queryFn: assistantService.getAssistants,
-    retry: 2,
-    retryDelay: 1000,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Handle API errors
