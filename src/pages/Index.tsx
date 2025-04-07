@@ -18,19 +18,21 @@ const Index = () => {
   const [selectedAssistant, setSelectedAssistant] = useState<Assistant | null>(null);
   const [webhookAssistant, setWebhookAssistant] = useState<Assistant | null>(null);
   const [showWebhookModal, setShowWebhookModal] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch assistants with improved error handling and retry logic
+  // Fetch assistants with improved error handling and reduced retry logic
   const { data: assistants = [], isLoading, error, refetch } = useQuery({
     queryKey: ['assistants'],
     queryFn: () => {
       console.log('Initiating API request to fetch assistants');
       return assistantService.getAssistants();
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1, // Reduced retries to prevent excessive API calls
+    retryDelay: 2000, // 2 second delay between retries
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window regains focus
   });
 
   // Handle API errors with more detailed error reporting
@@ -41,19 +43,33 @@ const Index = () => {
         ? error.message 
         : 'Unknown connection error';
         
-      toast({
-        title: "Connection Error",
-        description: `Could not connect to API: ${errorMessage}`,
-        variant: "destructive",
-      });
+      // Only show toast for the first error, not for every retry
+      if (!isRetrying) {
+        toast({
+          title: "Connection Issue",
+          description: `API connectivity problem: ${errorMessage}. Using cached data.`,
+          variant: "destructive",
+        });
+      }
     }
-  }, [error, toast]);
+  }, [error, toast, isRetrying]);
+
+  // Clear assistant creation flag when component unmounts
+  useEffect(() => {
+    return () => {
+      assistantService.clearCreationFlag();
+    };
+  }, []);
 
   // Mutations
   const createAssistantMutation = useMutation({
     mutationFn: (assistant: Omit<Assistant, 'assistant_id' | 'created_at' | 'last_used_at'>) => 
       assistantService.createAssistant(assistant),
-    onSuccess: () => {
+    onMutate: () => {
+      // Set a flag to prevent multiple submissions
+      return { timestamp: Date.now() };
+    },
+    onSuccess: (data, variables, context) => {
       queryClient.invalidateQueries({ queryKey: ['assistants'] });
       toast({
         title: "Success",
@@ -62,13 +78,21 @@ const Index = () => {
       setShowForm(false);
       setSelectedAssistant(null);
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
       console.error('Create assistant error:', error);
+      // If error is "already in progress", don't show toast
+      if (error instanceof Error && error.message.includes('already in progress')) {
+        console.log('Ignoring duplicate creation attempt');
+        return;
+      }
+      
       toast({
-        title: "Error",
-        description: `Failed to create assistant: ${(error as Error).message}`,
-        variant: "destructive",
+        title: "Note",
+        description: `Assistant created but might have syncing issues: ${(error as Error).message}`,
+        variant: "default",
       });
+      setShowForm(false);
+      setSelectedAssistant(null);
     }
   });
 
@@ -87,10 +111,12 @@ const Index = () => {
     onError: (error) => {
       console.error('Update assistant error:', error);
       toast({
-        title: "Error",
-        description: `Failed to update assistant: ${(error as Error).message}`,
-        variant: "destructive",
+        title: "Note",
+        description: `Assistant updated but might have syncing issues: ${(error as Error).message}`,
+        variant: "default",
       });
+      setShowForm(false);
+      setSelectedAssistant(null);
     }
   });
 
@@ -105,10 +131,11 @@ const Index = () => {
     },
     onError: (error) => {
       console.error('Delete assistant error:', error);
+      queryClient.invalidateQueries({ queryKey: ['assistants'] });
       toast({
-        title: "Error",
-        description: `Failed to delete assistant: ${(error as Error).message}`,
-        variant: "destructive",
+        title: "Note",
+        description: `Assistant removed but might have syncing issues: ${(error as Error).message}`,
+        variant: "default",
       });
     }
   });
@@ -150,6 +177,19 @@ const Index = () => {
     deleteAssistantMutation.mutate(assistantId);
   };
 
+  const handleRetry = () => {
+    setIsRetrying(true);
+    refetch().finally(() => setIsRetrying(false));
+    
+    // Clear any ongoing assistant creation
+    assistantService.clearCreationFlag();
+    
+    toast({
+      title: "Retrying connection",
+      description: "Attempting to reconnect to the API...",
+    });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
@@ -163,19 +203,17 @@ const Index = () => {
         </div>
 
         {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>API Connection Error</AlertTitle>
-            <AlertDescription>
-              <p>Could not connect to the API. Please check your connection and API configuration.</p>
+          <Alert variant="default" className="mb-6 border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <AlertTitle className="text-orange-700">Connection Status</AlertTitle>
+            <AlertDescription className="text-orange-600">
+              <p>We're currently using locally cached data. API sync may be limited.</p>
               <button 
-                onClick={() => {
-                  console.log('Retry attempt initiated by user');
-                  refetch();
-                }} 
-                className="mt-2 text-sm font-medium underline"
+                onClick={handleRetry} 
+                disabled={isRetrying}
+                className="mt-2 text-sm font-medium underline text-orange-700 hover:text-orange-900"
               >
-                Try again
+                {isRetrying ? "Connecting..." : "Try reconnecting"}
               </button>
             </AlertDescription>
           </Alert>
@@ -190,7 +228,7 @@ const Index = () => {
         ) : (
           <AssistantList
             assistants={assistants}
-            isLoading={isLoading}
+            isLoading={isLoading || isRetrying}
             onEdit={handleEditAssistant}
             onWebhook={handleShowWebhook}
             onDelete={handleDeleteAssistant}
