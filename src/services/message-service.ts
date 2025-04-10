@@ -1,6 +1,4 @@
 
-import { API_CONFIG, getHeaders } from './api-config';
-
 export interface Message {
   message_id: string;
   thread_id: string;
@@ -9,45 +7,50 @@ export interface Message {
   created_at: number;
 }
 
+// Mock implementation - replace with actual API calls when ready
 export const messageService = {
   // Get messages from a thread
   async getMessages(threadId: string): Promise<Message[]> {
-    try {
-      const response = await fetch(`${API_CONFIG.baseUrl}/threads/${threadId}/messages`, {
-        method: 'GET',
-        headers: getHeaders()
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch messages');
+    console.log('Mock: Fetching messages for thread', threadId);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 400));
+    
+    return [
+      {
+        message_id: `msg_${Math.random().toString(36).substring(2, 10)}`,
+        thread_id: threadId,
+        role: 'user',
+        content: 'Hello, how can you help me today?',
+        created_at: Date.now() / 1000 - 120
+      },
+      {
+        message_id: `msg_${Math.random().toString(36).substring(2, 10)}`,
+        thread_id: threadId,
+        role: 'assistant',
+        content: 'I can help you with product recommendations, order support, and answering questions about our services.',
+        created_at: Date.now() / 1000 - 60
       }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`Error fetching messages for thread ${threadId}:`, error);
-      throw error;
-    }
+    ];
   },
   
   // Add a message to a thread
   async addMessage(threadId: string, content: string, role: 'user' | 'assistant' = 'user'): Promise<Message> {
-    try {
-      const response = await fetch(`${API_CONFIG.baseUrl}/threads/${threadId}/messages`, {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify({ content, role })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to add message');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`Error adding message to thread ${threadId}:`, error);
-      throw error;
-    }
+    console.log('Mock: Adding message to thread', threadId);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    return {
+      message_id: `msg_${Math.random().toString(36).substring(2, 10)}`,
+      thread_id: threadId,
+      role,
+      content,
+      created_at: Date.now() / 1000
+    };
   }
 };
+
+/**
+ * TODO: Replace with actual API implementation
+ */

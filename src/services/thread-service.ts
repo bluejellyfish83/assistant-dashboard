@@ -1,47 +1,33 @@
 
-import { API_CONFIG, getHeaders } from './api-config';
-
 export interface Thread {
   thread_id: string;
   created_at: number;
 }
 
+// Mock implementation - replace with actual API calls when ready
 export const threadService = {
   // Create a new thread
   async createThread(): Promise<Thread> {
-    try {
-      const response = await fetch(`${API_CONFIG.baseUrl}/threads`, {
-        method: 'POST',
-        headers: getHeaders()
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to create thread');
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error creating thread:', error);
-      throw error;
-    }
+    console.log('Mock: Creating thread');
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    return {
+      thread_id: `thread_${Math.random().toString(36).substring(2, 10)}`,
+      created_at: Date.now() / 1000
+    };
   },
   
   // Delete a thread
   async deleteThread(threadId: string): Promise<void> {
-    try {
-      const response = await fetch(`${API_CONFIG.baseUrl}/threads/${threadId}`, {
-        method: 'DELETE',
-        headers: getHeaders()
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to delete thread');
-      }
-    } catch (error) {
-      console.error(`Error deleting thread ${threadId}:`, error);
-      throw error;
-    }
+    console.log('Mock: Deleting thread:', threadId);
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
 };
+
+/**
+ * TODO: Replace with actual API implementation
+ */
