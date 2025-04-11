@@ -96,7 +96,7 @@ const AssistantList: React.FC<AssistantListProps> = ({
               <TableHead>Model</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Created</TableHead>
-              <TableHead>Last Used</TableHead>
+              <TableHead>Last Updated</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -128,7 +128,7 @@ const AssistantList: React.FC<AssistantListProps> = ({
                     </Badge>
                   </TableCell>
                   <TableCell>{new Date(assistant.created_at * 1000).toLocaleDateString()}</TableCell>
-                  <TableCell>{new Date(assistant.last_used_at * 1000).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date((assistant.updated_at || assistant.created_at) * 1000).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button
