@@ -47,6 +47,12 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
         assistant_id: assistant.assistant_id,
         name: `Webhook for ${assistant.name}`
       });
+      
+      // Ensure webhook has required fields
+      if (!newWebhook || !newWebhook.secret) {
+        throw new Error("Invalid webhook response");
+      }
+      
       setWebhook(newWebhook);
     } catch (error) {
       toast({
@@ -60,8 +66,12 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
     }
   };
 
-  const copyToClipboard = async (text: string, itemName: string) => {
+  const copyToClipboard = async (text: string | undefined, itemName: string) => {
     try {
+      if (!text) {
+        throw new Error(`${itemName} is empty or undefined`);
+      }
+      
       await navigator.clipboard.writeText(text);
       toast({
         title: "Copied!",
@@ -98,7 +108,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
             <div className="space-y-2">
               <Label htmlFor="webhook-url">Webhook URL</Label>
               <div className="flex space-x-2">
-                <Input id="webhook-url" readOnly value={webhook.webhook_url} />
+                <Input id="webhook-url" readOnly value={webhook.webhook_url || ''} />
                 <Button
                   variant="outline"
                   size="icon"
@@ -117,7 +127,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                   id="webhook-secret"
                   type={showSecret ? "text" : "password"}
                   readOnly
-                  value={webhook.secret}
+                  value={webhook.secret || ''}
                 />
                 <Button
                   variant="outline"
@@ -147,7 +157,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                 <li>Add the following headers:
                   <ul className="list-disc list-inside ml-5 mt-1">
                     <li><code className="bg-muted px-1 py-0.5 rounded">Content-Type</code>: <code className="bg-muted px-1 py-0.5 rounded">application/json</code></li>
-                    <li><code className="bg-muted px-1 py-0.5 rounded">X-Webhook-Secret</code>: <code className="bg-muted px-1 py-0.5 rounded">{webhook.secret}</code></li>
+                    <li><code className="bg-muted px-1 py-0.5 rounded">X-Webhook-Secret</code>: <code className="bg-muted px-1 py-0.5 rounded">{webhook.secret || ''}</code></li>
                   </ul>
                 </li>
                 <li>Set the Body to the JSON format below</li>
