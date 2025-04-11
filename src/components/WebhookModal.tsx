@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -59,12 +60,21 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
     }
   };
 
-  const copyToClipboard = (text: string, itemName: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied!",
-      description: `${itemName} copied to clipboard`,
-    });
+  const copyToClipboard = async (text: string, itemName: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied!",
+        description: `${itemName} copied to clipboard`,
+      });
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
   };
 
   if (!assistant) return null;
@@ -93,6 +103,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(webhook.webhook_url, "Webhook URL")}
+                  type="button"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -106,12 +117,13 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                   id="webhook-secret"
                   type={showSecret ? "text" : "password"}
                   readOnly
-                  value={showSecret ? webhook.secret : "••••••••••••••••••••••••••••••••"}
+                  value={webhook.secret}
                 />
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setShowSecret(!showSecret)}
+                  type="button"
                 >
                   {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -119,6 +131,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                   variant="outline"
                   size="icon"
                   onClick={() => copyToClipboard(webhook.secret, "Secret Key")}
+                  type="button"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -134,7 +147,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
                 <li>Add the following headers:
                   <ul className="list-disc list-inside ml-5 mt-1">
                     <li><code className="bg-muted px-1 py-0.5 rounded">Content-Type</code>: <code className="bg-muted px-1 py-0.5 rounded">application/json</code></li>
-                    <li><code className="bg-muted px-1 py-0.5 rounded">X-Webhook-Secret</code>: <code className="bg-muted px-1 py-0.5 rounded">{showSecret ? webhook.secret : "••••••••••••••••••••••"}</code></li>
+                    <li><code className="bg-muted px-1 py-0.5 rounded">X-Webhook-Secret</code>: <code className="bg-muted px-1 py-0.5 rounded">{webhook.secret}</code></li>
                   </ul>
                 </li>
                 <li>Set the Body to the JSON format below</li>
@@ -161,7 +174,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button onClick={generateWebhook} disabled={loading}>
+          <Button onClick={generateWebhook} disabled={loading} type="button">
             {loading ? (
               <RefreshCw className="h-4 w-4 animate-spin mr-2" />
             ) : (
