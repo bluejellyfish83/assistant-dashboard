@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -143,30 +144,19 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
     }));
   };
 
-  const copyToClipboard = async (text: string | undefined, itemName: string) => {
+  const copyToClipboard = async (text: string, itemName: string) => {
+    if (!text || text === 'undefined') {
+      toast({
+        title: "Error",
+        description: `No ${itemName} available to copy`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      if (!text) {
-        throw new Error(`${itemName} is empty or undefined`);
-      }
-      
-      console.log(`Attempting to copy ${itemName}: ${text.substring(0, 5)}...`);
-      
-      // Use a more reliable clipboard approach
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';  // Avoid scrolling to bottom
-      textArea.style.opacity = '0';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      
-      const successful = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      
-      if (!successful) {
-        // Fallback to the newer API if execCommand fails
-        await navigator.clipboard.writeText(text);
-      }
+      // Modern clipboard API with better browser support
+      await navigator.clipboard.writeText(text);
       
       toast({
         title: "Copied!",
@@ -174,11 +164,28 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
       });
     } catch (err) {
       console.error('Failed to copy: ', err);
-      toast({
-        title: "Error",
-        description: `Failed to copy ${itemName} to clipboard: ${(err as Error).message}`,
-        variant: "destructive",
-      });
+      
+      // Fallback method if clipboard API fails
+      try {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        
+        toast({
+          title: "Copied!",
+          description: `${itemName} copied to clipboard`,
+        });
+      } catch (fallbackErr) {
+        console.error('Fallback copy method failed: ', fallbackErr);
+        toast({
+          title: "Error",
+          description: `Failed to copy ${itemName} to clipboard: ${(err as Error).message}`,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -222,7 +229,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => copyToClipboard(webhook.webhook_url, "Webhook URL")}
+                              onClick={() => copyToClipboard(webhook.webhook_url || '', "Webhook URL")}
                               type="button"
                             >
                               <Copy className="h-4 w-4" />
@@ -234,7 +241,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
                             <Input
                               type={showSecrets[webhook.webhook_id] ? "text" : "password"}
                               readOnly
-                              value={webhook.secret || ''}
+                              value={webhook.secret || webhook.webhook_secret || ''}
                               className="max-w-[140px]"
                             />
                             <Button
@@ -248,7 +255,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => copyToClipboard(webhook.secret, "Secret Key")}
+                              onClick={() => copyToClipboard(webhook.secret || webhook.webhook_secret || '', "Secret Key")}
                               type="button"
                             >
                               <Copy className="h-4 w-4" />
