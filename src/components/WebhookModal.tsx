@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -72,7 +71,25 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
         throw new Error(`${itemName} is empty or undefined`);
       }
       
-      await navigator.clipboard.writeText(text);
+      console.log(`Attempting to copy ${itemName}: ${text.substring(0, 5)}...`);
+      
+      // Use a more reliable clipboard approach
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';  // Avoid scrolling to bottom
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (!successful) {
+        // Fallback to the newer API if execCommand fails
+        await navigator.clipboard.writeText(text);
+      }
+      
       toast({
         title: "Copied!",
         description: `${itemName} copied to clipboard`,
@@ -81,7 +98,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
       console.error('Failed to copy: ', err);
       toast({
         title: "Error",
-        description: "Failed to copy to clipboard",
+        description: `Failed to copy ${itemName} to clipboard: ${(err as Error).message}`,
         variant: "destructive",
       });
     }

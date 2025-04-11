@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -45,8 +44,14 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
   // Query to fetch webhooks for this assistant
   const { data: webhooks = [], isLoading, refetch } = useQuery({
     queryKey: ['webhooks', assistant?.assistant_id],
-    queryFn: () => assistant ? webhookService.listWebhooksByAssistant(assistant.assistant_id) : Promise.resolve([]),
+    queryFn: () => {
+      if (!assistant) return Promise.resolve([]);
+      console.log('WebhookManager: Executing query function for assistant:', assistant.assistant_id);
+      return webhookService.listWebhooksByAssistant(assistant.assistant_id);
+    },
     enabled: !!assistant && open,
+    staleTime: 0, // Don't use cached data
+    refetchOnMount: true, // Always refetch when component mounts
   });
 
   // Reset state when modal opens/closes
@@ -57,6 +62,16 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
       setNewWebhookName('');
     }
   }, [open, assistant]);
+
+  useEffect(() => {
+    if (open && assistant) {
+      console.log('WebhookManager: Invalidating and refetching webhooks for assistant:', assistant.assistant_id);
+      // Force invalidate any cached data
+      queryClient.invalidateQueries({ queryKey: ['webhooks', assistant.assistant_id] });
+      // Manually trigger a refetch
+      refetch();
+    }
+  }, [open, assistant, queryClient, refetch]);
 
   // Create webhook mutation
   const createWebhookMutation = useMutation({
@@ -134,7 +149,25 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
         throw new Error(`${itemName} is empty or undefined`);
       }
       
-      await navigator.clipboard.writeText(text);
+      console.log(`Attempting to copy ${itemName}: ${text.substring(0, 5)}...`);
+      
+      // Use a more reliable clipboard approach
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';  // Avoid scrolling to bottom
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (!successful) {
+        // Fallback to the newer API if execCommand fails
+        await navigator.clipboard.writeText(text);
+      }
+      
       toast({
         title: "Copied!",
         description: `${itemName} copied to clipboard`,
@@ -143,7 +176,7 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ assistant, open, onClos
       console.error('Failed to copy: ', err);
       toast({
         title: "Error",
-        description: "Failed to copy to clipboard",
+        description: `Failed to copy ${itemName} to clipboard: ${(err as Error).message}`,
         variant: "destructive",
       });
     }
