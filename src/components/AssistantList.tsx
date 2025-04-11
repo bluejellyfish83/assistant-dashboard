@@ -26,7 +26,9 @@ import { useToast } from "@/hooks/use-toast";
 import { ApiAssistant } from '@/services/assistant-service';
 
 // Define the Assistant interface
-type Assistant = ApiAssistant;
+type Assistant = ApiAssistant & {
+  updated_at?: number;
+};
 
 interface AssistantListProps {
   assistants: Assistant[];

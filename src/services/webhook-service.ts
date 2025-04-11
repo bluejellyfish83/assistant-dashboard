@@ -1,3 +1,4 @@
+
 // Define the Webhook interface
 export interface Webhook {
     webhook_id: string;
@@ -41,6 +42,12 @@ export interface Webhook {
       }
   
       return response.json();
+    },
+
+    // List webhooks by assistant ID
+    async listWebhooksByAssistant(assistantId: string): Promise<Webhook[]> {
+      const allWebhooks = await this.listWebhooks();
+      return allWebhooks.filter(webhook => webhook.assistant_id === assistantId);
     },
   
     // Delete a webhook

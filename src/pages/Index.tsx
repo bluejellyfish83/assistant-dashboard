@@ -3,14 +3,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import AssistantList from '@/components/AssistantList';
 import AssistantForm from '@/components/AssistantForm';
-import WebhookModal from '@/components/WebhookModal';
+import WebhookManager from '@/components/WebhookManager';
 import { assistantService, ApiAssistant } from '@/services/assistant-service';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from 'lucide-react';
 
 // Define the Assistant interface with all required properties
-type Assistant = ApiAssistant;
+type Assistant = ApiAssistant & { 
+  updated_at?: number;
+};
 
 const Index = () => {
   const [showForm, setShowForm] = useState(false);
@@ -209,7 +211,7 @@ const Index = () => {
         )}
       </div>
 
-      <WebhookModal
+      <WebhookManager
         assistant={webhookAssistant}
         open={showWebhookModal}
         onClose={handleCloseWebhookModal}
