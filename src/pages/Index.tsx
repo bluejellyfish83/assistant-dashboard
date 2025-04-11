@@ -103,9 +103,11 @@ const Index = () => {
     mutationFn: (assistantId: string) => assistantService.deleteAssistant(assistantId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assistants'] });
+      // Also invalidate any webhook queries to ensure UI is up-to-date
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
       toast({
         title: "Success",
-        description: "Assistant deleted successfully",
+        description: "Assistant and all related webhooks deleted successfully",
       });
     },
     onError: (error) => {

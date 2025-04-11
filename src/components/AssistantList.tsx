@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,7 +59,7 @@ const AssistantList: React.FC<AssistantListProps> = ({
       onDelete(assistantToDelete.assistant_id);
       toast({
         title: "Deleting assistant...",
-        description: `${assistantToDelete.name} is being removed.`,
+        description: `${assistantToDelete.name} and all related webhooks are being removed.`,
       });
     }
     setDeleteDialogOpen(false);
@@ -168,7 +167,9 @@ const AssistantList: React.FC<AssistantListProps> = ({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Assistant</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete {assistantToDelete?.name}? This action cannot be undone.
+              Are you sure you want to delete "{assistantToDelete?.name}"? 
+              This will also delete all associated webhooks.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

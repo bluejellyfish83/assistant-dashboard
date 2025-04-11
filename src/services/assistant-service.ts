@@ -144,6 +144,44 @@ export const assistantService = {
   // Delete an assistant
   async deleteAssistant(assistantId: string): Promise<void> {
     try {
+      console.log('Deleting assistant with ID:', assistantId);
+      
+      // First, delete all related webhooks
+      try {
+        console.log('Fetching webhooks for assistant before deletion');
+        const webhooksResponse = await fetch(`${API_BASE_URL}/assistants/${assistantId}/webhooks`, {
+          headers: {
+            'x-api-key': API_KEY,
+          }
+        });
+        
+        if (webhooksResponse.ok) {
+          const webhooksData = await webhooksResponse.json();
+          const webhooks = webhooksData.webhooks || [];
+          
+          console.log(`Found ${webhooks.length} webhooks to delete for assistant ${assistantId}`);
+          
+          // Delete each webhook
+          for (const webhook of webhooks) {
+            console.log(`Deleting webhook: ${webhook.webhook_id}`);
+            await fetch(`${API_BASE_URL}/webhooks/${webhook.webhook_id}`, {
+              method: 'DELETE',
+              headers: {
+                'x-api-key': API_KEY,
+              }
+            });
+          }
+          
+          console.log('All webhooks deleted successfully');
+        } else {
+          console.warn('Could not fetch webhooks before assistant deletion:', await webhooksResponse.text());
+        }
+      } catch (webhookError) {
+        console.error('Error deleting associated webhooks:', webhookError);
+        // Continue with assistant deletion even if webhook deletion fails
+      }
+      
+      // Now delete the assistant
       const response = await fetch(`${API_BASE_URL}/assistants/${assistantId}`, {
         method: 'DELETE',
         headers: {
@@ -153,9 +191,15 @@ export const assistantService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to delete assistant: ${assistantId}`);
+        const errorText = await response.text();
+        console.error('Delete failed with status:', response.status);
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete assistant: ${assistantId} - ${errorText}`);
       }
+      
+      console.log('Assistant deleted successfully');
     } catch (error) {
+      console.error('Delete error:', error);
       handleApiError(error);
       throw error;
     }
