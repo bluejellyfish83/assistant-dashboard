@@ -12,17 +12,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff, Copy, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { webhookService, Webhook } from '@/services/webhook-service';
 
 interface Assistant {
   assistant_id: string;
   name: string;
-}
-
-interface Webhook {
-  webhook_id: string;
-  webhook_url: string;
-  secret: string;
-  created_at: number;
 }
 
 interface WebhookModalProps {
@@ -43,19 +37,26 @@ const WebhookModal: React.FC<WebhookModalProps> = ({ assistant, open, onClose })
     }
   }, [open, assistant]);
 
-  const generateWebhook = () => {
-    setLoading(true);
+  const generateWebhook = async () => {
+    if (!assistant) return;
     
-    // Simulate API call
-    setTimeout(() => {
-      setWebhook({
-        webhook_id: Math.random().toString(36).substring(2, 15),
-        webhook_url: `https://api.yourdomain.com/webhook/${Math.random().toString(36).substring(2, 15)}`,
-        secret: Math.random().toString(36).substring(2, 30) + Math.random().toString(36).substring(2, 30),
-        created_at: Date.now() / 1000,
+    setLoading(true);
+    try {
+      const newWebhook = await webhookService.createWebhook({
+        assistant_id: assistant.assistant_id,
+        name: `Webhook for ${assistant.name}`
       });
+      setWebhook(newWebhook);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to generate webhook. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Webhook generation error:', error);
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   const copyToClipboard = (text: string, itemName: string) => {
