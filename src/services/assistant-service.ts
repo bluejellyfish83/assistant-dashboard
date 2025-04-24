@@ -12,6 +12,7 @@ export interface ApiAssistant {
   last_used_at: number;
 }
 
+console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 // Use environment variables for API configuration
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://0675fyl2a3.execute-api.ap-east-1.amazonaws.com/dev';
 const API_KEY = import.meta.env.VITE_API_KEY || '';
