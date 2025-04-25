@@ -23,8 +23,8 @@ const models = [
   { value: "gryphe/mythomax-l2-13b", label: "MythoMax 13B" },
   { value: "nousresearch/hermes-2-pro-llama-3-8b", label: "Hermes 2 Pro - Llama 8B" },
   { value: "openai/gpt-4.1", label: "GPT-4.1" },
-  { value: "openai/gpt-4.1-mini", label: "GPT-4.1" },
-  { value: "openai/gpt-4.1-nano", label: "GPT-4.1" },
+  { value: "openai/gpt-4.1-mini", label: "GPT-4.1-mini" },
+  { value: "openai/gpt-4.1-nano", label: "GPT-4.1-nano" },
 ];
 
 interface ModelSelectorProps {
