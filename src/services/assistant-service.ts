@@ -1,4 +1,6 @@
 // Define the Assistant interface
+import { API_CONFIG } from '../lib/config';
+
 export interface ApiAssistant {
   assistant_id: string;
   name: string;
@@ -12,10 +14,9 @@ export interface ApiAssistant {
   last_used_at: number;
 }
 
-console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 // Use environment variables for API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://0675fyl2a3.execute-api.ap-east-1.amazonaws.com/dev';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+const API_BASE_URL = API_CONFIG.BASE_URL;
+const API_KEY = API_CONFIG.API_KEY;
 
 // Helper function to handle API errors
 const handleApiError = (error: any) => {

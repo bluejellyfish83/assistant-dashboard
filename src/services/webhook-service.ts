@@ -1,4 +1,6 @@
 // Define the Webhook interface
+import { API_CONFIG } from '../lib/config';
+
 export interface Webhook {
   webhook_id: string;
   webhook_url: string;
@@ -17,10 +19,9 @@ export interface CreateWebhookRequest {
   name: string;
 }
 
-console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
 // Use environment variables for API configuration
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://0675fyl2a3.execute-api.ap-east-1.amazonaws.com/dev';
-const API_KEY = import.meta.env.VITE_API_KEY || '';
+const API_BASE_URL = API_CONFIG.BASE_URL;
+const API_KEY = API_CONFIG.API_KEY;
 
 // Create headers function to ensure consistent headers across all requests
 const getHeaders = (): HeadersInit => {
